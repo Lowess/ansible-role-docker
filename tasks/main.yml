@@ -63,5 +63,5 @@
 
 - name: Run Docker hello-world command with Docker users
   shell: >
-    docker run -rm hello-world
+    docker run --rm hello-world
   with_items: "{{ docker_users }}"
