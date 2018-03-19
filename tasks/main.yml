@@ -1,0 +1,67 @@
+---
+# tasks file for ansible-role-docker
+
+- name: Install recommended Docker apt packages
+  apt:
+    state: latest
+    update_cache: yes
+    name: "{{ item }}"
+  with_items: "{{ docker_apt_recommended_packages }}"
+
+- name: Install pip using setuptools
+  easy_install:
+    state: latest
+    name: pip
+
+- name: Install Docker pip packages
+  pip:
+    state: latest
+    name: "{{ item }}"
+  with_items: "{{ docker_pip_packages }}"
+
+# NOTE: Not working even with `urllib3`, `pyopenssl`, `ndg-httpsclient`, and `pyasn1` installed
+# - name: Add the Docker GPG key
+#   apt_key:
+#     state: present
+#     url: https://download.docker.com/linux/ubuntu/gpg
+
+- name: Add Docker repository key
+  shell: >
+    curl -sSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  tags:
+    - skip_ansible_lint
+
+- name: Add the Docker PPA
+  apt_repository:
+    state: present
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release | lower }} stable"
+
+- name: Install Docker
+  apt:
+    state: present
+    name: "{{ item }}"
+    update_cache: yes
+  with_items: "{{ docker_apt_packages }}"
+
+- name: Enable and start Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+################################################################################
+### Configure Docker users
+################################################################################
+
+- name: Grant access on Docker commands to Docker users
+  user:
+    state: present
+    name: "{{ item }}"
+    append: yes
+    groups: docker
+  with_items: "{{ docker_users }}"
+
+- name: Run Docker hello-world command with Docker users
+  shell: >
+    docker run -rm hello-world
+  with_items: "{{ docker_users }}"
