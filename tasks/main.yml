@@ -8,10 +8,18 @@
     name: "{{ item }}"
   with_items: "{{ docker_apt_recommended_packages }}"
 
-- name: Install pip using setuptools
-  easy_install:
-    state: latest
-    name: pip
+# Workaround for https://github.com/ansible/ansible/issues/37296
+- block:
+
+    - name: Install pip using setuptools
+      easy_install:
+        state: latest
+        name: pip
+
+  rescue:
+
+    - name: Install pip using setuptools
+      shell: easy_install -U pip
 
 - name: Install Docker pip packages
   pip:
